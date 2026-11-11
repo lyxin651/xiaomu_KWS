@@ -1,0 +1,108 @@
+[init] sort: kws_cmvn_g1_e100.onnx inputs=['x', 'cache']
+[init] ctc: kws_ctc_v2verifier_e7_int8.onnx inputs=['x', 'cache']
+[run] sort/raw: total=392 todo=392 (resume skip=0)
+  ... 50/392  8.2s
+  ... 100/392  15.5s
+  ... 150/392  22.9s
+  ... 200/392  31.1s
+  ... 250/392  42.4s
+  ... 300/392  50.4s
+  ... 350/392  59.2s
+[done] sort/raw: ok=392 errors=0 triggered=109
+[run] sort/enhanced: total=392 todo=392 (resume skip=0)
+  ... 50/392  6.7s
+  ... 100/392  13.7s
+  ... 150/392  21.3s
+  ... 200/392  28.8s
+  ... 250/392  36.1s
+  ... 300/392  43.3s
+  ... 350/392  49.8s
+[done] sort/enhanced: ok=392 errors=0 triggered=41
+[run] ctc/raw: total=392 todo=392 (resume skip=0)
+  ... 50/392  12.1s
+  ... 100/392  24.4s
+  ... 150/392  36.4s
+  ... 200/392  48.9s
+  ... 250/392  61.2s
+  ... 300/392  73.4s
+  ... 350/392  85.2s
+[done] ctc/raw: ok=392 errors=0 triggered=28
+[run] ctc/enhanced: total=392 todo=392 (resume skip=0)
+  ... 50/392  11.9s
+  ... 100/392  24.0s
+  ... 150/392  35.7s
+  ... 200/392  48.0s
+  ... 250/392  59.8s
+  ... 300/392  71.8s
+  ... 350/392  84.0s
+[done] ctc/enhanced: ok=392 errors=0 triggered=11
+{
+  "sort_raw": {
+    "model": "sort",
+    "condition": "raw",
+    "model_file": "kws_cmvn_g1_e100.onnx",
+    "threshold": 0.84,
+    "total_rows": 392,
+    "ok": 392,
+    "errors": 0,
+    "triggered": 109,
+    "positive": 21,
+    "positive_triggered": 7,
+    "negative": 371,
+    "negative_triggered": 102,
+    "run_seconds": 65.5,
+    "chunk_ms": 30,
+    "cooldown_ms": 500.0
+  },
+  "sort_enhanced": {
+    "model": "sort",
+    "condition": "enhanced",
+    "model_file": "kws_cmvn_g1_e100.onnx",
+    "threshold": 0.84,
+    "total_rows": 392,
+    "ok": 392,
+    "errors": 0,
+    "triggered": 41,
+    "positive": 21,
+    "positive_triggered": 7,
+    "negative": 371,
+    "negative_triggered": 34,
+    "run_seconds": 55.8,
+    "chunk_ms": 30,
+    "cooldown_ms": 500.0
+  },
+  "ctc_raw": {
+    "model": "ctc",
+    "condition": "raw",
+    "model_file": "kws_ctc_v2verifier_e7_int8.onnx",
+    "threshold": -0.1,
+    "total_rows": 392,
+    "ok": 392,
+    "errors": 0,
+    "triggered": 28,
+    "positive": 21,
+    "positive_triggered": 14,
+    "negative": 371,
+    "negative_triggered": 14,
+    "run_seconds": 95.6,
+    "chunk_ms": 30,
+    "cooldown_ms": 500.0
+  },
+  "ctc_enhanced": {
+    "model": "ctc",
+    "condition": "enhanced",
+    "model_file": "kws_ctc_v2verifier_e7_int8.onnx",
+    "threshold": -0.1,
+    "total_rows": 392,
+    "ok": 392,
+    "errors": 0,
+    "triggered": 11,
+    "positive": 21,
+    "positive_triggered": 10,
+    "negative": 371,
+    "negative_triggered": 1,
+    "run_seconds": 93.6,
+    "chunk_ms": 30,
+    "cooldown_ms": 500.0
+  }
+}

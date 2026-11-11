@@ -1,0 +1,15 @@
+# 数据与权重不入库
+*.wav
+*.onnx
+*.npy
+*.zip
+*.pyc
+__pycache__/
+.DS_Store
+.venv/
+venv/
+
+# 本地数据集目录
+kws_dataset/
+kws_dataset_1016_5/
+gtcrn_enhanced/

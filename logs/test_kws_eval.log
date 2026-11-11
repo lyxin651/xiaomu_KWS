@@ -1,0 +1,33 @@
+[T1] PASS labels=392 positives=21 missing=98,99,100,222
+[init] sort: kws_cmvn_g1_e100.onnx inputs=['x', 'cache']
+[init] ctc: kws_ctc_v2verifier_e7_int8.onnx inputs=['x', 'cache']
+[T2] PASS sort 重复推理逐位一致 (frames=298, events=0)
+[T2] PASS ctc 重复推理逐位一致 (frames=298, events=1)
+[T3] PASS sort id=0 chunk 10/30/100ms 一致
+[T3] PASS sort id=1 chunk 10/30/100ms 一致
+[T3] PASS sort id=2 chunk 10/30/100ms 一致
+[T3] ctc kws_ctc_v2verifier_e7.onnx id=0 分数 max|Δ| vs 30ms: ['0.0000', '0.0000']  触发次数 1 vs [1, 1]
+[T3] PASS ctc float id=0 chunk 一致
+[T3] ctc kws_ctc_v2verifier_e7_int8.onnx id=0 分数 max|Δ| vs 30ms: ['1.9930', '2.7693']  触发次数 1 vs [1, 1]
+[T3] NOTE ctc int8 输出随 chunk 长度变化（动态量化激活尺度），部署与主实验均为 30ms，故统一固定 30ms
+[init] ctc: kws_ctc_v2verifier_e7_int8.onnx inputs=['x', 'cache']
+[T4] PASS ctc id=0 frames=298 wakes=1 scores=['-0.070'] 与官方 --wav 一致
+[T4] PASS ctc id=2 frames=298 wakes=0 scores=[] 与官方 --wav 一致
+[T4] PASS ctc id=101 frames=298 wakes=1 scores=['+1.440'] 与官方 --wav 一致
+[T5] OK sort raw      id=  0 label=1 trig=0 n=0 first=ms max=0.061795 frames=298
+[T5] OK sort raw      id=  1 label=1 trig=1 n=1 first=2160.0ms max=0.975977 frames=298
+[T5] OK sort raw      id=  2 label=0 trig=0 n=0 first=ms max=0.089028 frames=298
+[T5] OK sort raw      id=  3 label=0 trig=0 n=0 first=ms max=0.742247 frames=298
+[T5] OK sort enhanced id=  0 label=1 trig=0 n=0 first=ms max=0.144457 frames=298
+[T5] OK sort enhanced id=  1 label=1 trig=1 n=1 first=2170.0ms max=0.977008 frames=298
+[T5] OK sort enhanced id=  2 label=0 trig=0 n=0 first=ms max=0.078272 frames=298
+[T5] OK sort enhanced id=  3 label=0 trig=0 n=0 first=ms max=0.722676 frames=298
+[T5] OK ctc  raw      id=  0 label=1 trig=1 n=1 first=1970ms max=2.48576 frames=298
+[T5] OK ctc  raw      id=  1 label=1 trig=1 n=1 first=2170ms max=5.99383 frames=298
+[T5] OK ctc  raw      id=  2 label=0 trig=0 n=0 first=ms max=-5.157651 frames=298
+[T5] OK ctc  raw      id=  3 label=0 trig=0 n=0 first=ms max=-4.228427 frames=298
+[T5] OK ctc  enhanced id=  0 label=1 trig=1 n=1 first=2020ms max=-0.092956 frames=298
+[T5] OK ctc  enhanced id=  1 label=1 trig=1 n=1 first=2210ms max=5.761513 frames=298
+[T5] OK ctc  enhanced id=  2 label=0 trig=0 n=0 first=ms max=-4.414231 frames=298
+[T5] OK ctc  enhanced id=  3 label=0 trig=0 n=0 first=ms max=-6.31929 frames=298
+ALL TESTS PASSED

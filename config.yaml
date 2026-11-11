@@ -1,0 +1,70 @@
+# KWS 双模型增强前后效果验证 —— 实验配置
+# 本文件记录主实验的固定参数；所有脚本通过命令行显式传参，不隐式读取本文件。
+
+experiment:
+  name: kws_enhancement_eval
+  date: 2026-11-10
+  purpose: 评估现有语音增强（GTCRN）对 SORT 与 CTC 两种 KWS 模型的收益与副作用
+  note: 不训练模型、不修改权重、不调整增强算法
+
+dataset:
+  raw_dir: /Users/lei/Documents/公牛沐光KWS/kws_dataset        # 392 条原始挂测录音
+  enhanced_dir: /Users/lei/Documents/公牛沐光KWS/gtcrn_enhanced # 392 条对应增强录音
+  excluded_dir: /Users/lei/Documents/公牛沐光KWS/deploy/kws_dataset_1016_5  # 纯唤醒语料，不参与主实验
+  pairing: 按文件名 c100-01-<ID>.wav 的 ID 精确配对（禁止按排序位置匹配）
+  sample_rate: 16000
+  channels: 1
+  duration_sec: 3.0
+  total_samples: 392
+  positive_count: 21
+  negative_count: 371
+  positive_ids: [0, 1, 7, 25, 31, 32, 35, 40, 101, 106,
+                 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 128]
+  absent_ids_from_0_395: [98, 99, 100, 222]   # 原始集本来就缺，不作为待补样本
+
+inference:
+  chunk_ms: 30
+  chunk_samples: 480
+  frame_shift_ms: 10
+  frame_length_ms: 25
+  n_mels: 80
+  feature: StreamingFbank（deploy 包原样复用，CMVN 已烤入 ONNX 图内）
+  state_reset: 每条音频重新构造检测器（cache 从 _init_cache.npy 重新载入，fbank/matcher/cooldown 全部新建）
+  session_sharing: ONNX InferenceSession 按模型共享，逐样本状态不复用
+  max_frames_per_clip: 298
+
+models:
+  sort:
+    deploy_dir: /Users/lei/Documents/公牛沐光KWS/deploy/deploy_sort
+    class: OnnxKWS (mic_kws.py)
+    model_file: kws_cmvn_g1_e100.onnx
+    init_cache: kws_cmvn_g1_e100_init_cache.npy
+    threshold: 0.84
+    min_trigger_frames: 3
+    score_smooth: 3
+    cooldown_ms: 500
+    score_kind: frame_prob  # 每帧唤醒概率
+  ctc:
+    deploy_dir: /Users/lei/Documents/公牛沐光KWS/deploy/deploy_ctc
+    class: CtcKwsSession (mic_ctc.py)
+    model_file: kws_ctc_v2verifier_e7_int8.onnx
+    init_cache: kws_ctc_v2verifier_e7_int8_init_cache.npy
+    threshold: -0.10
+    cooldown_ms: 500
+    score_kind: path_score_nats_per_token  # 关键词路径平均每 token log-LR
+    note: 不用旧的设备采集 threshold=0.3；主实验固定部署默认 -0.10
+
+metrics:
+  recall: TP / 21
+  fpr: FP / 371（回采负样本触发比例，不能解释为 FA/h）
+  suppression: (FP_raw - FP_enhanced) / FP_raw
+  paired_test: 精确 McNemar（二项检验，双侧）
+  ci: Wilson 95%
+
+environment:
+  python: 3.9.6
+  numpy: 1.26.4
+  onnxruntime: 1.19.2
+  soundfile: 0.13.x
+  scipy: 1.13.x
+  matplotlib: 3.9.x
