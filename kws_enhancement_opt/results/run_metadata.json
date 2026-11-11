@@ -1,0 +1,63 @@
+{
+  "experiment": "GTCRN 增强输出优化（不改 KWS 模型）",
+  "date": "2026-11-11",
+  "dataset": {
+    "pairs": 392,
+    "positives": 21,
+    "negatives": 371,
+    "raw_dir": "/Users/lei/Documents/公牛沐光KWS/kws_dataset",
+    "enhanced_dir": "/Users/lei/Documents/公牛沐光KWS/gtcrn_enhanced",
+    "labels": "/Users/lei/Documents/公牛沐光KWS/kws_enhancement_eval/labels.csv",
+    "sample_rate": 16000,
+    "duration_sec": 3.0,
+    "all_pairs_same_length": true,
+    "pair_lag_samples": [-1, 0]
+  },
+  "models": {
+    "sort": {
+      "file": "deploy/deploy_sort/kws_cmvn_g1_e100.onnx",
+      "md5": "acc42defa0de1c1990f48f07538c3aa8",
+      "threshold": 0.84,
+      "rule": "连续3帧平滑后得分>=阈值, 500ms 冷却",
+      "score_kind": "frame_wake_prob"
+    },
+    "ctc_int8": {
+      "file": "deploy/deploy_ctc/kws_ctc_v2verifier_e7_int8.onnx",
+      "md5": "743b493d61d61a6309b7a7f177f76fca",
+      "threshold": -0.10,
+      "rule": "KeywordPathMatcher 路径分数>=阈值, 触发后复位+500ms 冷却",
+      "score_kind": "mean_per_token_log_LR_nats"
+    },
+    "ctc_fp32": {
+      "file": "deploy/deploy_ctc/kws_ctc_v2verifier_e7.onnx",
+      "md5": "20634b84ef33075f3ea0478a5d4a84bc"
+    }
+  },
+  "runtime": {
+    "chunk_ms": 30,
+    "chunk_samples": 480,
+    "state_reset": "每条音频重建 detector（cache/fbank/matcher/cooldown 全复位）",
+    "python": "3.9.6 (venv /tmp/kws_eval_venv)",
+    "numpy": "1.26.4",
+    "onnxruntime": "1.19.2",
+    "soundfile": "0.13.1",
+    "scipy": "1.13.1",
+    "matplotlib": "3.9.4",
+    "ort_threads_per_process": 1,
+    "shards": 6
+  },
+  "runs": {
+    "sweep": {"inferences": 1568, "wall_sec": 31, "note": "raw/enhanced × SORT/CTC，逐帧输出落盘"},
+    "candidates": {"inferences": 8624, "wall_sec": 156, "note": "11 个候选 × 2 模型 × 392"},
+    "chunk": {"inferences": 4704, "wall_sec": 182, "note": "INT8/FP32 × 10/30/100ms × raw/enhanced"}
+  },
+  "untouched": [
+    "kws_enhancement_eval/ 下所有既有脚本与结果",
+    "原始 WAV、GTCRN 增强 WAV",
+    "三个 ONNX 权重与 initial cache"
+  ],
+  "consistency_check": {
+    "candidate_enh_vs_previous_main_run": "SORT/CTC 逐条 triggered 完全一致（0 mismatch）",
+    "threshold_replay_vs_main_run": "SORT/CTC × raw/enhanced 默认阈值重放 0 mismatch"
+  }
+}

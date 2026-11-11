@@ -24,6 +24,24 @@
 
 完整分析见 [`reports/evaluation_report.md`](reports/evaluation_report.md)。
 
+## 第二阶段：GTCRN 输出优化（不改 KWS 模型）
+
+在上述基线上继续做三组实验：阈值/判决诊断、增强输出消融（固定增益 +1~+4 dB、raw↔enh RMS 匹配、干湿混合 α=0.9/0.75/0.5）、漏检归因（新增漏检 7/25/122/123/125 与 SORT 121）。
+
+| 方案 | SORT TP/FP | CTC TP/FP |
+|---|---|---|
+| 现有增强（基线） | 7 / 34 | 10 / 1 |
+| GTCRN +2 dB | 8 / 36 | **13 / 0** |
+| 增强逐条匹配 raw RMS（仅归因） | 9 / 36 | 15 / 1 |
+| raw | 7 / 102 | 14 / 14 |
+
+- 仅调 GTCRN 输出即可把 CTC 从 10/21 恢复到 13/21 且误触发 1→0，SORT 的误触发抑制收益保持（34→36）。
+- 5 条新增漏检中，固定增益只能救回 25（+2 dB）与 7（+4 dB）；122 需阈值 ≤−1.35 或掺 raw；123/125 只能在干湿混合下恢复。121（SORT）仅 mix ≥0.9 可恢复。
+- 修正了旧 chunk 测试把 blank 分数当关键词路径分数的问题：FP32 对 10/30/100 ms 完全不敏感（Δ=0），INT8 存在 0.3–0.6 nats/token 的 chunk 相关抖动。
+
+完整报告与逐样本结果见 [`kws_enhancement_opt/reports/report.md`](kws_enhancement_opt/reports/report.md)。
+
+
 ## 目录结构
 
 ```text
@@ -109,7 +127,7 @@ python scripts/generate_report.py --output-dir ..
 
 1. 正样本仅 21 条，比例指标置信区间宽；负样本比较使用精确 McNemar。
 2. FPR 为回采负样本触发比例，不能外推为部署 FA/h。
-3. CTC INT8 模型输出依赖 chunk 长度（同一句 10 vs 30 ms 路径分数最大差约 2–2.8 nats/token），
-   本结论仅对应部署口径 30 ms；float 模型无此现象。
-4. 增强后整体电平略降（中位 RMS 0.00286→0.00217），未做增益归一化，"过度抑制"未拆分去噪与电平因素。
-5. 未评估阈值扫描、连续自然运行 FA/h 及 `kws_dataset_1016_5` 纯唤醒语料。
+3. CTC INT8 模型输出依赖 chunk 长度（同一句 10 vs 30 ms 路径分数最大差约 1.3–1.9 nats/token，均值 0.3–0.4），
+   本结论仅对应部署口径 30 ms；FP32 模型对 chunk 长度完全不敏感（第二阶段已验证）。
+4. 增强后整体电平略降（中位 RMS 0.00286→0.00217，−1.98 dB）；第二阶段已用固定增益/RMS 匹配/干湿混合拆分电平与内容失真，结论见 `kws_enhancement_opt/reports/report.md`。
+5. 未评估连续自然运行 FA/h 及 `kws_dataset_1016_5` 纯唤醒语料；第二阶段阈值扫描仅用于归因，候选方案仍需独立数据验证。
