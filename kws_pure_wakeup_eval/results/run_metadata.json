@@ -1,0 +1,44 @@
+{
+  "raw_dir": "/Users/lei/Documents/公牛沐光KWS/deploy/kws_dataset_1016_5",
+  "enh_dir": "/Users/lei/Documents/公牛沐光KWS/gtcrn_enhanced_1016_5",
+  "n_pairs": 928,
+  "missing_ids": [
+    441,
+    641
+  ],
+  "all_positive": true,
+  "duration_sec": 3.0,
+  "sample_rate": 16000,
+  "models": [
+    "sort",
+    "ctc"
+  ],
+  "conds": [
+    "raw",
+    "enh"
+  ],
+  "chunk_ms": 30,
+  "sort_threshold": 0.84,
+  "ctc_threshold": -0.1,
+  "shards": 3,
+  "inference_counts": {
+    "main": 3712,
+    "gain_ablation_ctc": 2784
+  },
+  "model_md5": {
+    "sort": "acc42defa0de1c1990f48f07538c3aa8",
+    "ctc_int8": "743b493d61d61a6309b7a7f177f76fca"
+  },
+  "gain_conds": [
+    "enh_gain_p2",
+    "enh_gain_p4",
+    "enh_rms_matched"
+  ],
+  "notes": [
+    "每条音频重新初始化 detector/fbank/matcher/cooldown",
+    "SORT 0.84 连续3帧+500ms冷却",
+    "CTC -0.10 路径分+复位+500ms冷却",
+    "原始/增强长度逐条一致",
+    "未修改 ONNX/音频/已有实验结果"
+  ]
+}

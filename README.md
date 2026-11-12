@@ -41,6 +41,19 @@
 
 完整报告与逐样本结果见 [`kws_enhancement_opt/reports/report.md`](kws_enhancement_opt/reports/report.md)。
 
+## 第三阶段：纯唤醒语料召回验证（928 条全正样本）
+
+在 `gtcrn_enhanced_1016_5/`（增强）与 `deploy/kws_dataset_1016_5/`（原始）的 928 条配对“小沐小沐”上复测两个模型：
+
+| 模型 | 原始 | 增强 | 变化 |
+|---|---|---|---|
+| SORT | 920/928（99.14%） | 921/928（99.25%） | +1，无实质影响 |
+| CTC | 926/928（99.78%） | 890/928（95.91%） | **−36（−3.87 pp）** |
+
+- 损失集中在低电平样本，增强衰减与输入电平 Spearman ρ=0.94（−60 dBFS 时中位 −3.65 dB）。
+- 阈值降到 −2.0 也只有 911/928，16 条彻底不触发；+2/+4 dB 与逐条 RMS 匹配分别恢复到 898/906/900，仍低于 926，说明约一半损失是频谱失真。
+- 完整报告见 [`kws_pure_wakeup_eval/reports/report.md`](kws_pure_wakeup_eval/reports/report.md)。
+
 
 ## 目录结构
 

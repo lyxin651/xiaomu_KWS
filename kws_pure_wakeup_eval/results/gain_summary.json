@@ -1,0 +1,61 @@
+{
+  "enh_gain_p2": {
+    "n": 928,
+    "hit": 898,
+    "recall": 0.9677,
+    "max_score_median": 6.226,
+    "clip_files": 0,
+    "recovered_of_36": 7,
+    "recovered_ids": [
+      147,
+      149,
+      150,
+      549,
+      634,
+      863,
+      864
+    ]
+  },
+  "enh_gain_p4": {
+    "n": 928,
+    "hit": 906,
+    "recall": 0.9763,
+    "max_score_median": 6.412,
+    "clip_files": 0,
+    "recovered_of_36": 14,
+    "recovered_ids": [
+      146,
+      147,
+      149,
+      150,
+      349,
+      549,
+      634,
+      808,
+      827,
+      844,
+      862,
+      863,
+      864,
+      868
+    ]
+  },
+  "enh_rms_matched": {
+    "n": 928,
+    "hit": 900,
+    "recall": 0.9698,
+    "max_score_median": 6.155,
+    "clip_files": 0,
+    "recovered_of_36": 8,
+    "recovered_ids": [
+      149,
+      150,
+      634,
+      808,
+      844,
+      863,
+      864,
+      868
+    ]
+  }
+}
