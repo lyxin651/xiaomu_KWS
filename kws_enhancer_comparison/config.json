@@ -1,0 +1,24 @@
+{
+  "sample_rate": 16000,
+  "chunk_ms": 30,
+  "datasets": [
+    {
+      "name": "kws_dataset",
+      "raw_dir": "data/raw/kws_dataset",
+      "filename_pattern": "^c100-01-(\\d+)\\.wav$",
+      "positives": "list",
+      "positive_ids": [0, 1, 7, 25, 31, 32, 35, 40, 101, 106, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 128],
+      "description": "挂测回采音频：21 条真实唤醒 + 371 条误唤醒"
+    },
+    {
+      "name": "kws_dataset_1016_5",
+      "raw_dir": "data/raw/kws_dataset_1016_5",
+      "filename_pattern": "^c100-01-(\\d+)_raw\\.wav$",
+      "positives": "all",
+      "description": "纯唤醒语料：928 条全部为唤醒词「小沐小沐」"
+    }
+  ],
+  "methods": ["raw", "FastEnhancer_T", "RNNoise"],
+  "models": ["sort", "ctc"],
+  "enhanced_root": "data/enhanced"
+}

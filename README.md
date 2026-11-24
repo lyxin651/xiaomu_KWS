@@ -54,6 +54,23 @@
 - 阈值降到 −2.0 也只有 911/928，16 条彻底不触发；+2/+4 dB 与逐条 RMS 匹配分别恢复到 898/906/900，仍低于 926，说明约一半损失是频谱失真。
 - 完整报告见 [`kws_pure_wakeup_eval/reports/report.md`](kws_pure_wakeup_eval/reports/report.md)。
 
+## 第四阶段：FastEnhancer_T / RNNoise 两种增强的实际影响（服务器侧 7920 次推理）
+
+把同一批音频分别送入两个 KWS，比较原始与两种增强输出（30 ms chunk，逐样本复位；
+`kws_dataset` = 21 正 + 371 负，`kws_dataset_1016_5` = 928 条全正）。
+
+| 数据集 | 模型 | 原始 | FastEnhancer_T | RNNoise |
+|---|---|---|---|---|
+| kws_dataset | SORT | 7 TP / 102 FP | **0 TP / 19 FP** | 3 TP / 18 FP |
+| kws_dataset | CTC | 14 TP / 14 FP | **0 TP / 0 FP** | 2 TP / 1 FP |
+| kws_dataset_1016_5 | SORT | 920/928（99.14%） | **393/928（42.35%）** | 906/928（97.63%） |
+| kws_dataset_1016_5 | CTC | 926/928（99.78%） | **231/928（24.89%）** | 907/928（97.74%） |
+
+- 两种增强都能压低误触发（SORT 102→19/18，CTC 14→0/1），但真实唤醒同步被杀，**无法直接前置到 KWS**。
+- 机制：增强对真实唤醒的衰减远大于误唤醒（FastEnhancer_T −11.3 dB vs −4.7 dB；
+  RNNoise −8.8 dB vs −5.3 dB）。RNNoise 在干净近场只衰减 1.1 dB，故 1016_5 召回几乎无损。
+- FastEnhancer_T 两种场景都塌（1016_5 衰减 7.2 dB 且波形相关仅 0.69），失真与衰减叠加。
+- 逐条结果、p 值与复现脚本见 [`kws_enhancer_comparison/`](kws_enhancer_comparison/README.md)。
 
 ## 目录结构
 
@@ -77,6 +94,10 @@
 │   └── selected_cases/*.png    # 典型案例 raw/enhanced 分数曲线
 ├── reports/evaluation_report.md
 ├── logs/                       # 批量推理日志、测试日志
+├── kws_enhancer_comparison/    # 第四阶段：FastEnhancer_T/RNNoise × 双模型 × 双数据集
+│   ├── config.json
+│   ├── scripts/                # run_matrix.py / analyze_results.py / run_all.sh / upload_to_server.sh
+│   └── results/                # report.md / summary.json / 12 份逐条 CSV
 └── scripts/
     ├── prepare_dataset.py      # 生成 labels.csv + data_validation.json
     ├── evaluate_kws.py         # 四组批量流式推理（支持断点续跑）
