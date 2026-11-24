@@ -13,3 +13,7 @@ venv/
 kws_dataset/
 kws_dataset_1016_5/
 gtcrn_enhanced/
+
+# 但第四阶段的结果目录按数据集命名，需要入库
+!kws_enhancer_comparison/results/kws_dataset/
+!kws_enhancer_comparison/results/kws_dataset_1016_5/
