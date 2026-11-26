@@ -22,8 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS_DIR = ROOT / 'results'
 BUCKET = ['tp', 'fn', 'fp', 'tn']
-METHOD_LABEL = {'raw': '原始（基线）', 'FastEnhancer_T': 'FastEnhancer_T',
-                'RNNoise': 'RNNoise'}
+METHOD_LABEL = {'raw': '原始（基线）'}
 
 
 def mcnemar_exact(b, c):
@@ -143,8 +142,47 @@ def pct_delta(cur, base):
     return f'{d:+.2f} pp'
 
 
+def headline(summary):
+    """按结果自动生成首段摘要（不写死任何数字）。"""
+    n_methods = max((len([m for m in d['runs'].get('sort', {}) if m != 'raw'])
+                     for d in summary.values()), default=0)
+    lines = [f'本次共评估原始音频与 {n_methods} 种增强算法，两套 KWS 权重与判决逻辑保持不变，'
+             '只替换输入音频。']
+    for dname, d in summary.items():
+        ds = d['dataset']
+        lines.append('')
+        lines.append(f'- **{dname}**（正样本 {ds["n_pos"]}、负样本 {ds["n_neg"]}）')
+        for model in ('sort', 'ctc'):
+            runs = d['runs'].get(model, {})
+            base = runs.get('raw', {}).get('metrics')
+            cands = [(m, p['metrics']) for m, p in runs.items()
+                     if m != 'raw' and p.get('metrics')]
+            if not base or not cands:
+                continue
+            good = [(m, x) for m, x in cands
+                    if x['recall'] is not None and base['recall'] is not None
+                    and x['recall'] >= base['recall']]
+            if good and base['n_neg']:
+                good.sort(key=lambda t: (t[1]['fpr'], -t[1]['recall']))
+                m, x = good[0]
+                lines.append(f'  - {model.upper()}：召回不低于原始且误触发最低的是 **{m}**'
+                             f'（Recall {x["recall"] * 100:.2f}%、误触发率 {x["fpr"] * 100:.2f}%）。')
+            elif good:
+                good.sort(key=lambda t: (-t[1]['recall'], t[1]['fp']))
+                m, x = good[0]
+                lines.append(f'  - {model.upper()}：召回不低于原始的有 {len(good)} 种，'
+                             f'最高为 **{m}**（{x["recall"] * 100:.2f}%）。')
+            else:
+                m, x = max(cands, key=lambda t: t[1]['recall'])
+                lines.append(f'  - {model.upper()}：全部增强算法召回都低于原始，'
+                             f'最高为 {m}（{x["recall"] * 100:.2f}%）。')
+    return lines
+
+
 def build_report(summary, meta):
-    lines = ['# 语音增强对两种 KWS 模型的影响：原始 vs FastEnhancer_T / RNNoise', '']
+    lines = ['# 语音增强对两种 KWS 模型的影响：原始音频与全部增强算法', '']
+    lines.extend(headline(summary))
+    lines.append('')
     lines.append('两套 KWS 权重与判决逻辑保持不变，只替换输入音频；')
     lines.append(f'推理口径：{meta.get("sample_rate", 16000)} Hz、'
                  f'{meta.get("chunk_ms", 30)} ms chunk、逐样本状态复位。')
@@ -224,12 +262,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--datasets', nargs='+', default=None)
     ap.add_argument('--models', nargs='+', default=['sort', 'ctc'])
-    ap.add_argument('--methods', nargs='+', default=['raw', 'FastEnhancer_T', 'RNNoise'])
+    ap.add_argument('--methods', nargs='+', default=None)
     args = ap.parse_args()
 
     with open(ROOT / 'config.json', encoding='utf-8') as f:
         cfg = json.load(f)
     datasets = args.datasets or [d['name'] for d in cfg['datasets']]
+    methods = args.methods or cfg['methods']
     ds_by_name = {d['name']: d for d in cfg['datasets']}
 
     summary = {}
@@ -243,7 +282,7 @@ def main():
         for model in args.models:
             runs = {}
             base_rows = None
-            for method in args.methods:
+            for method in methods:
                 rows = read_run(RESULTS_DIR / dname / f'{model}__{method}.csv')
                 if not rows:
                     continue

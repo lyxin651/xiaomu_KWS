@@ -18,7 +18,12 @@
       "description": "纯唤醒语料：928 条全部为唤醒词「小沐小沐」"
     }
   ],
-  "methods": ["raw", "FastEnhancer_T", "RNNoise"],
+  "methods": [
+    "raw", "FastEnhancer_T", "RNNoise",
+    "GTCRN-DNS3", "CoFi-Lite", "FastEnhancer-T", "UL-UNAS",
+    "RNNoise-little", "LiSenNet", "FSPEN", "WebRTC-NS", "SpeexDSP-NS",
+    "OMLSA-IMCRA", "Wiener-Filter", "TSDCA-BA"
+  ],
   "models": ["sort", "ctc"],
   "enhanced_root": "data/enhanced"
 }

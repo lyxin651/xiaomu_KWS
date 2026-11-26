@@ -54,23 +54,25 @@
 - 阈值降到 −2.0 也只有 911/928，16 条彻底不触发；+2/+4 dB 与逐条 RMS 匹配分别恢复到 898/906/900，仍低于 926，说明约一半损失是频谱失真。
 - 完整报告见 [`kws_pure_wakeup_eval/reports/report.md`](kws_pure_wakeup_eval/reports/report.md)。
 
-## 第四阶段：FastEnhancer_T / RNNoise 两种增强的实际影响（服务器侧 7920 次推理）
+## 第四阶段：14 种语音增强算法对两种 KWS 模型的影响（服务器侧 39,600 次推理）
 
-把同一批音频分别送入两个 KWS，比较原始与两种增强输出（30 ms chunk，逐样本复位；
-`kws_dataset` = 21 正 + 371 负，`kws_dataset_1016_5` = 928 条全正）。
+在 `kws_dataset`（21 正 + 371 负）与 `kws_dataset_1016_5`（928 条全正）上，
+用 SORT 与 CTC 分别评测原始音频和 14 种增强输出（30 ms chunk，逐样本复位）。
 
-| 数据集 | 模型 | 原始 | FastEnhancer_T | RNNoise |
-|---|---|---|---|---|
-| kws_dataset | SORT | 7 TP / 102 FP | **0 TP / 19 FP** | 3 TP / 18 FP |
-| kws_dataset | CTC | 14 TP / 14 FP | **0 TP / 0 FP** | 2 TP / 1 FP |
-| kws_dataset_1016_5 | SORT | 920/928（99.14%） | **393/928（42.35%）** | 906/928（97.63%） |
-| kws_dataset_1016_5 | CTC | 926/928（99.78%） | **231/928（24.89%）** | 907/928（97.74%） |
+| 场景 | 结论 |
+|---|---|
+| SORT / 降误触发 | **GTCRN-DNS3** 召回不变（33.33%），误触发 27.49%→9.16%，纯唤醒集 99.25% |
+| SORT / 提召回 | **SpeexDSP-NS** 57.14%，但误触发 16.17%，纯唤醒集 99.03% |
+| CTC / 最优工作点 | **SpeexDSP-NS** 71.43% / 0.54%，纯唤醒集 96.44% |
+| CTC / 零误触发 | GTCRN-DNS3、CoFi-Lite 等 0.27%，但召回仅 47.62% |
+| 灾难性算法 | FSPEN（SORT 4.31% / CTC 2.80%）、LiSenNet（38.04% / 34.16%）、FastEnhancer_T（42.35% / 24.89%） |
 
-- 两种增强都能压低误触发（SORT 102→19/18，CTC 14→0/1），但真实唤醒同步被杀，**无法直接前置到 KWS**。
-- 机制：增强对真实唤醒的衰减远大于误唤醒（FastEnhancer_T −11.3 dB vs −4.7 dB；
-  RNNoise −8.8 dB vs −5.3 dB）。RNNoise 在干净近场只衰减 1.1 dB，故 1016_5 召回几乎无损。
-- FastEnhancer_T 两种场景都塌（1016_5 衰减 7.2 dB 且波形相关仅 0.69），失真与衰减叠加。
-- 逐条结果、p 值与复现脚本见 [`kws_enhancer_comparison/`](kws_enhancer_comparison/README.md)。
+- 没有任何一个算法能同时做到"召回不降 + 误触发大降 + 纯唤醒集几乎无损"；
+  SORT 与 CTC 对同一增强的响应明显不对称（如 TSDCA-BA 误触发 1.08%/0.27%，纯唤醒召回却掉到 96.88%/75.54%）。
+- 本轮修正了三个算法（`WebRTC-NS`→`webrtc_ns_fixed`、`Wiener-Filter`→`wiener_tuned`、
+  `TSDCA-BA`→`tsdca_ba_fixed`）：旧结果因断点续跑被跳过而停留在旧音频上，已用 `--no-resume` 强制重算。
+- 完整两张表（TP/FN/FP/TN/Recall/误触发率）、Δ、McNemar p 值与逐样本 ID 见
+  [`kws_enhancer_comparison/README.md`](kws_enhancer_comparison/README.md)。
 
 ## 目录结构
 
@@ -96,7 +98,7 @@
 ├── logs/                       # 批量推理日志、测试日志
 ├── kws_enhancer_comparison/    # 第四阶段：FastEnhancer_T/RNNoise × 双模型 × 双数据集
 │   ├── config.json
-│   ├── scripts/                # run_matrix.py / analyze_results.py / run_all.sh / upload_to_server.sh
+│   ├── scripts/                # run_matrix / run_limited / analyze_results / run_all / upload_to_server
 │   └── results/                # report.md / summary.json / 12 份逐条 CSV
 └── scripts/
     ├── prepare_dataset.py      # 生成 labels.csv + data_validation.json
