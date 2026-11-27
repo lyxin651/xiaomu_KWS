@@ -163,16 +163,19 @@ def headline(summary):
             good = [(m, x) for m, x in cands
                     if x['recall'] is not None and base['recall'] is not None
                     and x['recall'] >= base['recall']]
-            if good and base['n_neg']:
-                good.sort(key=lambda t: (t[1]['fpr'], -t[1]['recall']))
-                m, x = good[0]
-                lines.append(f'  - {MODEL_LABEL.get(model, model.upper())}：召回不低于原始且误触发最低的是 **{m}**'
-                             f'（Recall {x["recall"] * 100:.2f}%、误触发率 {x["fpr"] * 100:.2f}%）。')
+            # 优先"召回不降 + 误触发不升"的候选里召回最高的；都不满足则退回召回最高
+            strict = [t for t in good
+                      if base['n_neg'] == 0 or t[1]['fpr'] <= base['fpr'] + 1e-9]
+            if strict:
+                m, x = max(strict, key=lambda t: (t[1]['recall'], -(t[1]['fpr'] or 0.0)))
+                fpr_txt = ('—' if x['fpr'] is None else f'{x["fpr"] * 100:.2f}%')
+                lines.append(f'  - {MODEL_LABEL.get(model, model.upper())}：召回不降、误触发不升的算法里'
+                             f'召回最高的是 **{m}**（Recall {x["recall"] * 100:.2f}%、'
+                             f'误触发率 {fpr_txt}）。')
             elif good:
-                good.sort(key=lambda t: (-t[1]['recall'], t[1]['fp']))
-                m, x = good[0]
+                m, x = max(good, key=lambda t: (t[1]['recall'], -(t[1]['fpr'] or 0.0)))
                 lines.append(f'  - {MODEL_LABEL.get(model, model.upper())}：召回不低于原始的有 {len(good)} 种，'
-                             f'最高为 **{m}**（{x["recall"] * 100:.2f}%）。')
+                             f'最高为 **{m}**（{x["recall"] * 100:.2f}%），但误触发均高于原始。')
             else:
                 m, x = max(cands, key=lambda t: t[1]['recall'])
                 lines.append(f'  - {MODEL_LABEL.get(model, model.upper())}：全部增强算法召回都低于原始，'
@@ -184,7 +187,7 @@ def build_report(summary, meta):
     lines = ['# 语音增强对三类 KWS 模型的影响：原始音频与全部增强算法', '']
     lines.extend(headline(summary))
     lines.append('')
-    lines.append('两套 KWS 权重与判决逻辑保持不变，只替换输入音频；')
+    lines.append('三个 KWS 模型（三套权重）与判决逻辑均保持不变，只替换输入音频；')
     lines.append(f'推理口径：{meta.get("sample_rate", 16000)} Hz、'
                  f'{meta.get("chunk_ms", 30)} ms chunk、逐样本状态复位。')
     lines.append('SORT 阈值 0.84（连续 3 帧 + 500 ms 冷却）；CTC 阈值 -0.10（500 ms 冷却）。')
