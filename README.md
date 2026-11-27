@@ -54,24 +54,29 @@
 - 阈值降到 −2.0 也只有 911/928，16 条彻底不触发；+2/+4 dB 与逐条 RMS 匹配分别恢复到 898/906/900，仍低于 926，说明约一半损失是频谱失真。
 - 完整报告见 [`kws_pure_wakeup_eval/reports/report.md`](kws_pure_wakeup_eval/reports/report.md)。
 
-## 第四阶段：14 种语音增强算法对两种 KWS 模型的影响（服务器侧 39,600 次推理）
+## 第四阶段：14 种语音增强算法对三类 KWS 模型的影响（服务器侧 59,400 次推理）
 
 在 `kws_dataset`（21 正 + 371 负）与 `kws_dataset_1016_5`（928 条全正）上，
-用 SORT 与 CTC 分别评测原始音频和 14 种增强输出（30 ms chunk，逐样本复位）。
+用 SORT、CTC-e7-int8、CTC-v23-int8 分别评测原始音频和 14 种增强输出（30 ms chunk，逐样本复位）。
+三个模型：`kws_cmvn_g1_e100.onnx`（阈值 0.84）、`kws_ctc_v2verifier_e7_int8.onnx`、
+`kws_ctc_v23_int8.onnx`（后两者阈值 −0.10，结构/vocab 相同、权重不同）。
 
 | 场景 | 结论 |
 |---|---|
 | SORT / 降误触发 | **GTCRN-DNS3** 召回不变（33.33%），误触发 27.49%→9.16%，纯唤醒集 99.25% |
 | SORT / 提召回 | **SpeexDSP-NS** 57.14%，但误触发 16.17%，纯唤醒集 99.03% |
-| CTC / 最优工作点 | **SpeexDSP-NS** 71.43% / 0.54%，纯唤醒集 96.44% |
-| CTC / 零误触发 | GTCRN-DNS3、CoFi-Lite 等 0.27%，但召回仅 47.62% |
-| 灾难性算法 | FSPEN（SORT 4.31% / CTC 2.80%）、LiSenNet（38.04% / 34.16%）、FastEnhancer_T（42.35% / 24.89%） |
+| CTC-e7 / 最优工作点 | **SpeexDSP-NS** 71.43% / 0.54%，纯唤醒集 96.44% |
+| CTC-e7 / 零误触发 | GTCRN-DNS3、CoFi-Lite 等 0.27%，但召回仅 47.62% |
+| CTC-v23 / 最优 | **OMLSA-IMCRA** 42.86% / 0.27%（原始 28.57% / 0.27%），纯唤醒 99.68% |
+| 灾难性算法 | FSPEN（SORT 4.31% / e7 2.80% / v23 1.51%）、LiSenNet、FastEnhancer_T |
 
 - 没有任何一个算法能同时做到"召回不降 + 误触发大降 + 纯唤醒集几乎无损"；
-  SORT 与 CTC 对同一增强的响应明显不对称（如 TSDCA-BA 误触发 1.08%/0.27%，纯唤醒召回却掉到 96.88%/75.54%）。
+  同一增强在不同架构/版本上响应明显不对称（TSDCA-BA 误触发 1.08%/0.27%，纯唤醒召回却掉到 96.88%/75.54%）。
+- `CTC-v23` 比 `CTC-e7` 保守得多：原始误触发 3.77%→0.27%，但召回 66.67%→28.57%；纯唤醒集 100%（e7 为 99.78%）。
+  同一增强在 v23 上的收益与 e7 常相反（SpeexDSP-NS 在 e7 提召回、在 v23 反而降 4.76 pp）。
 - 本轮修正了三个算法（`WebRTC-NS`→`webrtc_ns_fixed`、`Wiener-Filter`→`wiener_tuned`、
   `TSDCA-BA`→`tsdca_ba_fixed`）：旧结果因断点续跑被跳过而停留在旧音频上，已用 `--no-resume` 强制重算。
-- 完整两张表（TP/FN/FP/TN/Recall/误触发率）、Δ、McNemar p 值与逐样本 ID 见
+- 完整四张表（TP/FN/FP/TN/Recall/误触发率）、Δ、McNemar p 值与逐样本 ID 见
   [`kws_enhancer_comparison/README.md`](kws_enhancer_comparison/README.md)。
 
 ## 目录结构

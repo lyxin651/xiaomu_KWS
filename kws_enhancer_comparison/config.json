@@ -7,7 +7,29 @@
       "raw_dir": "data/raw/kws_dataset",
       "filename_pattern": "^c100-01-(\\d+)\\.wav$",
       "positives": "list",
-      "positive_ids": [0, 1, 7, 25, 31, 32, 35, 40, 101, 106, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 128],
+      "positive_ids": [
+        0,
+        1,
+        7,
+        25,
+        31,
+        32,
+        35,
+        40,
+        101,
+        106,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        128
+      ],
       "description": "挂测回采音频：21 条真实唤醒 + 371 条误唤醒"
     },
     {
@@ -19,11 +41,26 @@
     }
   ],
   "methods": [
-    "raw", "FastEnhancer_T", "RNNoise",
-    "GTCRN-DNS3", "CoFi-Lite", "FastEnhancer-T", "UL-UNAS",
-    "RNNoise-little", "LiSenNet", "FSPEN", "WebRTC-NS", "SpeexDSP-NS",
-    "OMLSA-IMCRA", "Wiener-Filter", "TSDCA-BA"
+    "raw",
+    "FastEnhancer_T",
+    "RNNoise",
+    "GTCRN-DNS3",
+    "CoFi-Lite",
+    "FastEnhancer-T",
+    "UL-UNAS",
+    "RNNoise-little",
+    "LiSenNet",
+    "FSPEN",
+    "WebRTC-NS",
+    "SpeexDSP-NS",
+    "OMLSA-IMCRA",
+    "Wiener-Filter",
+    "TSDCA-BA"
   ],
-  "models": ["sort", "ctc"],
+  "models": [
+    "sort",
+    "ctc",
+    "ctc_v23"
+  ],
   "enhanced_root": "data/enhanced"
 }

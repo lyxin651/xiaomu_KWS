@@ -127,8 +127,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--datasets', nargs='+', default=None)
     ap.add_argument('--methods', nargs='+', default=None)
-    ap.add_argument('--models', nargs='+', default=None,
-                    choices=['sort', 'ctc'])
+    ap.add_argument('--models', nargs='+', default=None)
     ap.add_argument('--limit', type=int, default=None, help='每组仅跑前 N 条（冒烟测试）')
     ap.add_argument('--no-resume', action='store_true', help='重跑并覆盖已有结果')
     ap.add_argument('--dry-run', action='store_true', help='只校验文件与打印计划')

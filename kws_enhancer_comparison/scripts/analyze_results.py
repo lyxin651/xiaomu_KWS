@@ -23,6 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 RESULTS_DIR = ROOT / 'results'
 BUCKET = ['tp', 'fn', 'fp', 'tn']
 METHOD_LABEL = {'raw': '原始（基线）'}
+MODEL_LABEL = {'sort': 'SORT', 'ctc': 'CTC-e7-int8', 'ctc_v23': 'CTC-v23-int8'}
 
 
 def mcnemar_exact(b, c):
@@ -152,7 +153,7 @@ def headline(summary):
         ds = d['dataset']
         lines.append('')
         lines.append(f'- **{dname}**（正样本 {ds["n_pos"]}、负样本 {ds["n_neg"]}）')
-        for model in ('sort', 'ctc'):
+        for model in d['runs']:
             runs = d['runs'].get(model, {})
             base = runs.get('raw', {}).get('metrics')
             cands = [(m, p['metrics']) for m, p in runs.items()
@@ -165,22 +166,22 @@ def headline(summary):
             if good and base['n_neg']:
                 good.sort(key=lambda t: (t[1]['fpr'], -t[1]['recall']))
                 m, x = good[0]
-                lines.append(f'  - {model.upper()}：召回不低于原始且误触发最低的是 **{m}**'
+                lines.append(f'  - {MODEL_LABEL.get(model, model.upper())}：召回不低于原始且误触发最低的是 **{m}**'
                              f'（Recall {x["recall"] * 100:.2f}%、误触发率 {x["fpr"] * 100:.2f}%）。')
             elif good:
                 good.sort(key=lambda t: (-t[1]['recall'], t[1]['fp']))
                 m, x = good[0]
-                lines.append(f'  - {model.upper()}：召回不低于原始的有 {len(good)} 种，'
+                lines.append(f'  - {MODEL_LABEL.get(model, model.upper())}：召回不低于原始的有 {len(good)} 种，'
                              f'最高为 **{m}**（{x["recall"] * 100:.2f}%）。')
             else:
                 m, x = max(cands, key=lambda t: t[1]['recall'])
-                lines.append(f'  - {model.upper()}：全部增强算法召回都低于原始，'
+                lines.append(f'  - {MODEL_LABEL.get(model, model.upper())}：全部增强算法召回都低于原始，'
                              f'最高为 {m}（{x["recall"] * 100:.2f}%）。')
     return lines
 
 
 def build_report(summary, meta):
-    lines = ['# 语音增强对两种 KWS 模型的影响：原始音频与全部增强算法', '']
+    lines = ['# 语音增强对三类 KWS 模型的影响：原始音频与全部增强算法', '']
     lines.extend(headline(summary))
     lines.append('')
     lines.append('两套 KWS 权重与判决逻辑保持不变，只替换输入音频；')
@@ -203,7 +204,7 @@ def build_report(summary, meta):
             for method, pack in runs.items():
                 m = pack['metrics']
                 if m is None:
-                    lines.append(f'| {model.upper()} | {METHOD_LABEL.get(method, method)} '
+                    lines.append(f'| {MODEL_LABEL.get(model, model.upper())} | {METHOD_LABEL.get(method, method)} '
                                  f'| — | — | — | — | — | — | — | — | — | 缺结果 |')
                     continue
                 if method == 'raw' or not base:
@@ -216,7 +217,7 @@ def build_report(summary, meta):
                     p_neg = f'{pn:.3g}' if pn is not None else '—'
                     p_pos = f'{pp:.3g}' if pp is not None else '—'
                 lines.append(
-                    f'| {model.upper()} | {METHOD_LABEL.get(method, method)} | '
+                    f'| {MODEL_LABEL.get(model, model.upper())} | {METHOD_LABEL.get(method, method)} | '
                     f'{m["tp"]} | {m["fn"]} | {m["fp"]} | {m["tn"]} | '
                     f'{fmt_pct(m["recall"])} | {fmt_pct(m["fpr"])} | {dp} | {dq} | '
                     f'{p_neg} | {p_pos} |')
@@ -250,7 +251,8 @@ def build_report(summary, meta):
                     suppressed = nm['raw_only']
                     new_fp = nm['method_only']
                     bits.append(f'负样本：抑制误触发 {suppressed} 条，新增误触发 {new_fp} 条')
-                lines.append(f'- **{model.upper()} / {METHOD_LABEL.get(method, method)}**：'
+                lines.append(f'- **{MODEL_LABEL.get(model, model.upper())} / '
+                             f'{METHOD_LABEL.get(method, method)}**：'
                              + '；'.join(bits)
                              + f'（正样本帧分数中位 {base_m["frame_score_max_pos_median"]} → '
                                f'{pack["metrics"]["frame_score_max_pos_median"]}）')
@@ -261,7 +263,7 @@ def build_report(summary, meta):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--datasets', nargs='+', default=None)
-    ap.add_argument('--models', nargs='+', default=['sort', 'ctc'])
+    ap.add_argument('--models', nargs='+', default=None)
     ap.add_argument('--methods', nargs='+', default=None)
     args = ap.parse_args()
 
@@ -269,6 +271,7 @@ def main():
         cfg = json.load(f)
     datasets = args.datasets or [d['name'] for d in cfg['datasets']]
     methods = args.methods or cfg['methods']
+    models = args.models or cfg.get('models', ['sort', 'ctc'])
     ds_by_name = {d['name']: d for d in cfg['datasets']}
 
     summary = {}
@@ -279,7 +282,7 @@ def main():
                              'description': ds_cfg.get('description', ''),
                              'n_pos': 0, 'n_neg': 0},
                  'runs': {}}
-        for model in args.models:
+        for model in models:
             runs = {}
             base_rows = None
             for method in methods:

@@ -55,6 +55,15 @@ MODEL_SPECS = {
         'kwargs': {'cooldown_ms': 500.0},
         'score_kind': 'path_score_nats_per_token',
     },
+    'ctc_v23': {
+        'module_dir': 'deploy_ctc',
+        'module_file': 'mic_ctc.py',
+        'class': 'CtcKwsSession',
+        'model': 'kws_ctc_v23_int8.onnx',
+        'threshold': -0.10,
+        'kwargs': {'cooldown_ms': 500.0},
+        'score_kind': 'path_score_nats_per_token',
+    },
 }
 
 CSV_FIELDS = [
